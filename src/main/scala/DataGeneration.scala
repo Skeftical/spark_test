@@ -31,7 +31,7 @@ object DataGeneration {
     val variance = 0.01
     val sizeDataset = 10000
     //Min mean and maximum mean for each dimension
-    val minMaxMeans = Array(
+    val minMaxMeans = Array(//Means around regions of interest
       (0.05, 0.2),
       (0.10, 0.25)
     )
@@ -53,8 +53,6 @@ object DataGeneration {
     })
     //Transform vector to string and save
     multiDataset.map(_.mkString(",")).saveAsTextFile("/home/fotis/dev_projects/spark_test/target/OUT")
-
-
 
   }
 
