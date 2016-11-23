@@ -28,5 +28,9 @@ object ParserNormalizer {
       .setMin(-0.5)
     val scalerModel = scaler.fit(df)
     val scaledData = scalerModel.transform(df)
+
+    //Extract dimensions
+    scaledData.select($"scaledOpen").write.format("parquet")
+      .save("/home/fotis/dev_projects/spark_test/target/normalized.parquet")
   }
 }

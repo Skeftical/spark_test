@@ -5,7 +5,10 @@ import org.apache.spark.mllib.random.RandomRDDs._
 import org.apache.spark.sql.SparkSession
 import scala.util.Random
 
-
+/**
+  * Class that generates hyper cubes over range predicates to facilitate the execution of
+  * aggregate queries.
+  */
 
 
 object DataGeneration {
@@ -18,7 +21,7 @@ object DataGeneration {
   }
   def main(args: Array[String]) = {
     val spark = SparkSession
-      .builder()
+      .builder().master("local")
       .appName("Data Generation")
       .config("spark.some.config.option", "some-value")
       .getOrCreate()
@@ -51,8 +54,13 @@ object DataGeneration {
       for (i <- broadcastVar.value.indices)
         yield { broadcastVar.value(i)(subspace) + broadcastVariance.value * v(i)  } //Transform Multi
     })
+    //Add volume for hypercube
+    val uniVol = uniformRDD(sc, sizeDataset,1)
+
+
     //Transform vector to string and save
-    multiDataset.map(_.mkString(",")).saveAsTextFile("/home/fotis/dev_projects/spark_test/target/OUT")
+    multiDataset.zip(uniVol).map(t => t._1.mkString(",") +"," + t._2.toString)
+      .saveAsTextFile("/home/fotis/dev_projects/spark_test/target/OUT")
 
   }
 
