@@ -55,7 +55,7 @@ object DataGeneration {
         yield { broadcastVar.value(i)(subspace) + broadcastVariance.value * v(i)  } //Transform Multi
     })
     //Add volume for hypercube
-    val uniVol = uniformRDD(sc, sizeDataset,1)
+    val uniVol = uniformRDD(sc, sizeDataset,1).map(d => 0.1 + 0.01 * d)
 
 
     //Transform vector to string and save
