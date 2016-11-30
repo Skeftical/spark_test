@@ -40,33 +40,33 @@ object QueryGenerator {
     //Execute COUNT query over range predicates
     val queries = rdd.map(_.split(",").map(_.toDouble)).collect()
 
-    val inds: RDD[breeze.linalg.DenseVector[Long]] = vectors.map(v => {
-      //  Create {0, 1} indicator vector
-      breeze.linalg.DenseVector(queries.map(q => {
-        // Define as before
-        val volume = q(q.length-1)
-        val dimensions = q.slice(0, q.length-1)
-        // Output 0 or 1 for each q
-        if (isWithin(volume, v, dimensions)) 1L else 0L
-      }))
-    })
-
-    val counts: breeze.linalg.DenseVector[Long] = inds
-      .aggregate(breeze.linalg.DenseVector.zeros[Long](queries.length))(_ += _, _ += _)
-
-//    val results = queries.par.map(q => {
-//      val volume = q(q.length-1)
-//      val dimensions = q.slice(0, q.length-1)
-//      val count = df.filter(row => {
-//        val v = row.getAs[DenseVector]("scaledOpen")
-//        isWithin(volume, v, dimensions)
-//      }).count
-//      q.mkString(",")+","+count
+//    val inds: RDD[breeze.linalg.DenseVector[Long]] = vectors.map(v => {
+//      //  Create {0, 1} indicator vector
+//      breeze.linalg.DenseVector(queries.map(q => {
+//        // Define as before
+//        val volume = q(q.length-1)
+//        val dimensions = q.slice(0, q.length-1)
+//        // Output 0 or 1 for each q
+//        if (isWithin(volume, v, dimensions)) 1L else 0L
+//      }))
 //    })
-    val results = queries.zip(counts.toArray).map {
-        case (q, c) => s"""${q.mkString(",")},$c"""
-    }
-    val rddResults = sc.parallelize(results)
+//
+//    val counts: breeze.linalg.DenseVector[Long] = inds
+//      .aggregate(breeze.linalg.DenseVector.zeros[Long](queries.length))(_ += _, _ += _)
+
+    val results = queries.par.map(q => {
+      val volume = q(q.length-1)
+      val dimensions = q.slice(0, q.length-1)
+      val count = df.filter(row => {
+        val v = row.getAs[DenseVector]("scaledOpen")
+        isWithin(volume, v, dimensions)
+      }).count
+      q.mkString(",")+","+count
+    })
+//    val results = queries.zip(counts.toArray).map {
+//        case (q, c) => s"""${q.mkString(",")},$c"""
+//    }
+    val rddResults = sc.parallelize(results.toArray[String])
 //    //Save File
     rddResults.saveAsTextFile("/home/fotis/dev_projects/spark_test/target/count_query_results")
   }
