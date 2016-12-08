@@ -42,7 +42,11 @@ object Pipeline {
     }
     val trainedModels = lrModels.par.map(seq => seq._2.fit(data.select($"features",$"label").where("prediction = "+seq._1)))
 
-    trainedModels.foreach(lrModel => println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}"))
+    trainedModels.foreach(lrModel => {
+      println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
+      println(s"RMSE: ${lrModel.summary.rootMeanSquaredError}")
+      println(s"r2: ${lrModel.summary.r2}")
+    })
 
 
 
