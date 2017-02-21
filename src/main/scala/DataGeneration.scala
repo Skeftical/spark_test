@@ -32,7 +32,7 @@ object DataGeneration {
     val subspaces  = 5
     val dimensions = 2
     val variance = 0.01
-    val sizeDataset = 10000
+    val sizeDataset = 20000
     //Min mean and maximum mean for each dimension
     val minMaxMeans = Array(//Means around regions of interest
       (0.05, 0.2),
@@ -55,12 +55,12 @@ object DataGeneration {
         yield { broadcastVar.value(i)(subspace) + broadcastVariance.value * v(i)  } //Transform Multi
     })
     //Add volume for hypercube
-    val uniVol = uniformRDD(sc, sizeDataset,1).map(d => 0.1 + 0.01 * d)
+    val uniVol = uniformRDD(sc, sizeDataset,1).map(d => 0.1 + 0.09 * d)
 
 
     //Transform vector to string and save
     multiDataset.zip(uniVol).map(t => t._1.mkString(",") +"," + t._2.toString)
-      .saveAsTextFile("/home/fotis/dev_projects/spark_test/target/OUT")
+      .saveAsTextFile("/home/fotis/dev_projects/spark_test/target/OUT_extended_l")
 
   }
 

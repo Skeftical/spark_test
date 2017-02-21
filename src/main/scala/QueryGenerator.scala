@@ -1,4 +1,5 @@
-import org.apache.spark.ml.linalg.{DenseVector, Vectors, Vector}
+import breeze.numerics._
+import org.apache.spark.ml.linalg.{DenseVector, Vector, Vectors}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.rdd.RDD
 /**
@@ -10,13 +11,20 @@ import org.apache.spark.rdd.RDD
   * ABSTRACT AWAY
   */
 object QueryGenerator {
-  def isWithin(volume: Double , x : DenseVector, dimensions : Array[Double]) :Boolean = {
-    if (x.size != dimensions.length) throw new Exception
-    val tuples = dimensions.map(d => (d-volume, d+volume)) // Transform each of the dimensions into a tuple of low and high value
-    for (i <- 0 until x.size){
+  //For range queries
+  def isWithin(volume: Double , x : Array[Double], query : Array[Double]) :Boolean = {
+    if (x.length != query.length) throw new Exception
+    val tuples = query.map(d => (d-volume, d+volume)) // Transform each of the dimensions into a tuple of low and high value
+    for (i <- x.indices){
       if (x(i)< tuples(i)._1 || x(i)>tuples(i)._2 ) return false
     }
     true
+  }
+  //For theta queries
+  def isWithinEuclidean(theta : Double, x: Array[Double], query: Array[Double]) : Boolean = {
+    //Euclidean distance
+    val dist = sqrt(x.zip(query).map(p => p._1 - p._2).map(d => d * d).sum)
+    dist<=theta
   }
 
   def querySetSizeSmall = true
@@ -29,10 +37,12 @@ object QueryGenerator {
     val sc = spark.sparkContext
     import spark.implicits._
 
+    val INPUT_DATA = "/home/fotis/dev_projects/spark_test/target/normalized.parquet"
+    val QUERY_FILE = "/home/fotis/dev_projects/spark_test/target/OUT_extended_l/part-00000"
     //load normalized dimensions
-    val df = spark.read.parquet("/home/fotis/dev_projects/spark_test/target/normalized.parquet").cache()
+    val df = spark.read.parquet(INPUT_DATA).cache()
     //load query ranges
-    val rdd = spark.sparkContext.textFile("/home/fotis/dev_projects/spark_test/target/OUT/part-00000")
+    val rdd = spark.sparkContext.textFile(QUERY_FILE)
 
     val vectors: RDD[DenseVector] = df.rdd.map(
       _.getAs[DenseVector]("scaledOpen")
@@ -56,10 +66,10 @@ object QueryGenerator {
 
     val results = queries.par.map(q => {
       val volume = q(q.length-1)
-      val dimensions = q.slice(0, q.length-1)
+      val query = q.slice(0, q.length-1)
       val count = df.filter(row => {
-        val v = row.getAs[DenseVector]("scaledOpen")
-        isWithin(volume, v, dimensions)
+        val v = row.getAs[Array[Double]]("scaledOpen")
+        isWithinEuclidean(volume, v, query)
       }).count
       q.mkString(",")+","+count
     })
@@ -68,7 +78,7 @@ object QueryGenerator {
 //    }
     val rddResults = sc.parallelize(results.toArray[String])
 //    //Save File
-    rddResults.saveAsTextFile("/home/fotis/dev_projects/spark_test/target/count_query_results")
+    rddResults.saveAsTextFile("/home/fotis/dev_projects/spark_test/target/count_query_results_extended_l")
   }
 
 }
