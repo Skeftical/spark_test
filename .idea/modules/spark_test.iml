@@ -19,10 +19,15 @@
       <sourceFolder url="file://$MODULE_DIR$/../../target/scala-2.11/resource_managed/test" type="java-test-resource" />
       <excludeFolder url="file://$MODULE_DIR$/../../target/OUT" />
       <excludeFolder url="file://$MODULE_DIR$/../../target/OUT_extended_l" />
+      <excludeFolder url="file://$MODULE_DIR$/../../target/OUT_extended_l_exp" />
+      <excludeFolder url="file://$MODULE_DIR$/../../target/OUT_extended_l_normal" />
+      <excludeFolder url="file://$MODULE_DIR$/../../target/OUT_extended_l_uniform" />
       <excludeFolder url="file://$MODULE_DIR$/../../target/count_query_results" />
       <excludeFolder url="file://$MODULE_DIR$/../../target/count_query_results_extended_l" />
+      <excludeFolder url="file://$MODULE_DIR$/../../target/crimeDataCoordinates_normalized_full" />
       <excludeFolder url="file://$MODULE_DIR$/../../target/normalized.parquet" />
       <excludeFolder url="file://$MODULE_DIR$/../../target/resolution-cache" />
+      <excludeFolder url="file://$MODULE_DIR$/../../target/singquery" />
       <excludeFolder url="file://$MODULE_DIR$/../../target/singquery.csv" />
       <excludeFolder url="file://$MODULE_DIR$/../../target/streams" />
       <excludeFolder url="file://$MODULE_DIR$/../../target/target" />

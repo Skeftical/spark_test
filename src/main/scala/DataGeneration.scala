@@ -31,17 +31,19 @@ object DataGeneration {
       */
     val subspaces  = 5
     val dimensions = 2
-    val variance = 0.01
+    val variance = 0.02
     val sizeDataset = 20000
     //Min mean and maximum mean for each dimension
     val minMaxMeans = Array(//Means around regions of interest
-      (0.05, 0.2),
-      (0.10, 0.25)
+      Array((0.0, 0.4),(-0.4,0.0)),//xy combination - region 0
+      Array((-0.2, 0.2), (0.2,0.4))//region 1
     )
     val means = new Array[Array[Double]](dimensions)
-
+    val randRegion = new Random()
+    var region = 0
     for (i <- 0 until dimensions){
-      means(i) = generate_means(minMaxMeans(i)._1, minMaxMeans(i)._2, subspaces)
+      region = randRegion.nextInt(1) //0 to 1
+      means(i) = generate_means(minMaxMeans(region)(i)._1, minMaxMeans(region)(i)._2, subspaces)
     }
     //Broadcast variables to be available at all nodes.
     val broadcastVar = sc.broadcast(means)
@@ -54,13 +56,17 @@ object DataGeneration {
       for (i <- broadcastVar.value.indices)
         yield { broadcastVar.value(i)(subspace) + broadcastVariance.value * v(i)  } //Transform Multi
     })
-    //Add volume for hypercube
-    val uniVol = uniformRDD(sc, sizeDataset,1).map(d => 0.1 + 0.09 * d)
+    //Add volume for hypercube Uniform
+//    val uniVol = uniformRDD(sc, sizeDataset,1).map(d => 0.1 + 0.09 * d)
+    val uniVol = normalRDD(sc, sizeDataset,1).map(d => 0.1 + 0.09 * d.abs)
+//      val mean = 0.1
+//      val uniVol = exponentialRDD(sc, mean, sizeDataset,1).map(d => 0.1 + 0.09 * d)
+
 
 
     //Transform vector to string and save
     multiDataset.zip(uniVol).map(t => t._1.mkString(",") +"," + t._2.toString)
-      .saveAsTextFile("/home/fotis/dev_projects/spark_test/target/OUT_extended_l")
+      .saveAsTextFile("/home/fotis/dev_projects/spark_test/target/OUT_extended_l_norm_-05to05")
 
   }
 
