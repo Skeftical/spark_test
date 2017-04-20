@@ -50,7 +50,7 @@ object QueryExecuteCrimeData {
 
     dfRenamed.persist().createOrReplaceTempView("points")
 
-    val QUERY_FILE = "/home/fotis/dev_projects/spark_test/target/OUT_extended_l_norm_-05to05/part-00000"
+    val QUERY_FILE = "/home/fotis/dev_projects/spark_test/target/OUT_high_variance_l_norm_-05to05/part-00000"
     val rdd = spark.sparkContext.textFile(QUERY_FILE)
 
     val queries = rdd.map(_.split(",").map(_.toDouble)).collect() //if query number too large then this can cause problems
@@ -65,6 +65,6 @@ object QueryExecuteCrimeData {
 
     val rddResults = sc.parallelize(results.toArray[String])
     //    //Save File
-    rddResults.saveAsTextFile("/home/fotis/dev_projects/spark_test/target/count_query_results_NORM-THETA_CRIME-DS_DATSPA-5")
+    rddResults.saveAsTextFile("/home/fotis/dev_projects/spark_test/target/count_query_results_HIGH-VAR-THETA_NORM-THETA_CRIME-DS_DATSPACES-5")
   }
 }
