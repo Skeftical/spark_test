@@ -50,21 +50,29 @@ object QueryExecuteCrimeData {
 
     dfRenamed.persist().createOrReplaceTempView("points")
 
-    val QUERY_FILE = "/home/fotis/dev_projects/spark_test/target/OUT_high_variance_l_norm_-05to05/part-00000"
-    val rdd = spark.sparkContext.textFile(QUERY_FILE)
+//    val files = Array("/home/fotis/dev_projects/spark_test/target/gau-x__gau-l_varx-0.01_multimodal-l(0.02_0.08_0.1)_varl=0.0009/part-00000",
+//                      "/home/fotis/dev_projects/spark_test/target/gau-x__uni-l_varx-0.01_multimodal-l(0.02_0.08_0.1)/part-00000",
+//                      "/home/fotis/dev_projects/spark_test/target/uni-x__gau-l_varx-0.01_multimodal-l(0.02_0.08_0.1)/part-00000",
+//                      "/home/fotis/dev_projects/spark_test/target/uni-x__uni-l_varx-0.01_multimodal-l(0.02_0.08_0.1)/part-00000")
+    val files = Array("/home/fotis/dev_projects/spark_test/target/uni-x__uni-l_varx-0.01_multimodal-CONNECTED-l(0.02_0.04_0.06)/part-00000")
+    files.par.foreach(qfile => {
+      //    val QUERY_FILE = "/home/fotis/dev_projects/spark_test/target/OUT_high_variance_l_norm_-05to05/part-00000"
+      val rdd = spark.sparkContext.textFile(qfile)
 
-    val queries = rdd.map(_.split(",").map(_.toDouble)).collect() //if query number too large then this can cause problems
+      val queries = rdd.map(_.split(",").map(_.toDouble)).collect() //if query number too large then this can cause problems
 
-    val results = queries.par.map(q => {
-      val theta = q(2)
-      val x1 = q(0)
-      val x2 = q(1)
-      val count = spark.sql(s"SELECT * FROM points WHERE $theta > sqrt(power($x1 - x, 2) + power($x2 - y, 2))").count()
-      q.mkString(",")+","+count
+      val results = queries.par.map(q => {
+        val theta = q(2)
+        val x1 = q(0)
+        val x2 = q(1)
+        val count = spark.sql(s"SELECT * FROM points WHERE $theta > sqrt(power($x1 - x, 2) + power($x2 - y, 2))").count()
+        q.mkString(",")+","+count
+      })
+
+      val rddResults = sc.parallelize(results.toArray[String])
+      //    //Save File
+      rddResults.saveAsTextFile("/home/fotis/dev_projects/spark_test/target/crime_results_"+qfile)
     })
 
-    val rddResults = sc.parallelize(results.toArray[String])
-    //    //Save File
-    rddResults.saveAsTextFile("/home/fotis/dev_projects/spark_test/target/count_query_results_HIGH-VAR-THETA_NORM-THETA_CRIME-DS_DATSPACES-5")
-  }
+    }
 }
