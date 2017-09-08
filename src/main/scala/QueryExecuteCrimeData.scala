@@ -43,12 +43,13 @@ object QueryExecuteCrimeData {
     /**
       * If data already created and normalized
       */
-    val ddf = spark.read.option("inferSchema", "true").csv("/home/fotis/dev_projects/spark_test/target/crimeDataCoordinates_normalized_full")
-    val newNames = Seq("x","y")
-    val dfRenamed = ddf.toDF(newNames: _*)
+    val ddf = spark.read.option("inferSchema", "true").option("header","true")
+      .csv("/home/fotis/dev_projects/spark_test/target/crimes_AVG_data/part-cleaned-normalized.csv").drop("_c0")
+//    val newNames = Seq("x","y","avg")
+//    val dfRenamed = ddf.toDF(newNames: _*)
 
 
-    dfRenamed.persist().createOrReplaceTempView("points")
+    ddf.persist().createOrReplaceTempView("points")
 
 //    val files = Array("/home/fotis/dev_projects/spark_test/target/gau-x__gau-l_varx-0.01_multimodal-l(0.02_0.08_0.1)_varl=0.0009/part-00000",
 //                      "/home/fotis/dev_projects/spark_test/target/gau-x__uni-l_varx-0.01_multimodal-l(0.02_0.08_0.1)/part-00000",
@@ -66,12 +67,13 @@ object QueryExecuteCrimeData {
         val x1 = q(0)
         val x2 = q(1)
         val count = spark.sql(s"SELECT * FROM points WHERE $theta > sqrt(power($x1 - x, 2) + power($x2 - y, 2))").count()
-        q.mkString(",")+","+count
+        val average = spark.sql(s"SELECT AVG(update_in_days) FROM points WHERE $theta > sqrt(power($x1 - x, 2) + power($x2 - y, 2))").first().getDouble(0)
+        q.mkString(",")+","+count+","+average
       })
 
       val rddResults = sc.parallelize(results.toArray[String])
       //    //Save File
-      rddResults.saveAsTextFile("/home/fotis/dev_projects/spark_test/target/crime_results_"+qfile)
+      rddResults.saveAsTextFile("/home/fotis/dev_projects/spark_test/target/crime_results_AVG"+qfile)
     })
 
     }
