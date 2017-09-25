@@ -23,19 +23,30 @@ object QueryExecuteCallsData {
     val summary = spark.sql("SELECT AVG(smsin) as avg_smsin, square_id FROM calls GROUP BY square_id")
     summary.persist()
 
-    var queries = spark.read.option("inferSchema", "true").csv("/home/fotis/dev_projects/spark_test/target/calls_queries_gau_gau_varl-0.0009_varx-0.0001/part-00000").collect()
-//    queries = queries.slice(1,5)
-    // queries.registerTempTable("queries")
-    val results = queries.par.map(q => {
-      val theta = q.getDouble(2)
-      val x1 = q.getDouble(0)
-      val x2 = q.getDouble(1)
-      val squareIds = spark.sql(s"SELECT cellId FROM grid WHERE $theta > sqrt(power($x1 - x, 2) + power($x2 - y, 2)) GROUP BY cellId") //Euclidean distance query
-      val result = summary.join(squareIds, summary("square_id") === squareIds("cellId")).agg(Map("avg_smsin" -> "avg"))
-      q.mkString(",")+","+result.head()(0)
+    val files = Array("/home/fotis/dev_projects/spark_test/target/calls_queries_gau_gau_varl-0.0009_varx-0.0001/part-00000",
+                          "/home/fotis/dev_projects/spark_test/target/calls_queries_gau_uni_varl-/part-00000",
+                          "/home/fotis/dev_projects/spark_test/target/calls_queries_uni_gau_varl-/part-00000",
+                          "/home/fotis/dev_projects/spark_test/target/calls_queries_uni_uni_varl-/part-00000")
+
+    files.par.foreach(qfile => {
+      var queries = spark.read.option("inferSchema", "true").csv(qfile).collect()
+      //    queries = queries.slice(1,5)
+      // queries.registerTempTable("queries")
+      val results = queries.par.map(q => {
+        val theta = q.getDouble(2)
+        val x1 = q.getDouble(0)
+        val x2 = q.getDouble(1)
+        val squareIds = spark.sql(s"SELECT cellId FROM grid WHERE $theta > sqrt(power($x1 - x, 2) + power($x2 - y, 2)) GROUP BY cellId") //Euclidean distance query
+        squareIds.cache()
+        val result_Count = squareIds.count()
+        val result = summary.join(squareIds, summary("square_id") === squareIds("cellId")).agg(Map("avg_smsin" -> "avg"))
+        q.mkString(",")+","+result.head()(0)+","+result_Count
+      })
+
+      val rddResults = sc.parallelize(results.toArray[String])
+      rddResults.repartition(1).saveAsTextFile("/home/fotis/dev_projects/spark_test/target/calls_AVG_results"+qfile.split("/")(6))
     })
 
-    val rddResults = sc.parallelize(results.toArray[String])
-    rddResults.repartition(1).saveAsTextFile("/home/fotis/dev_projects/spark_test/target/calls_AVG_results")
+
   }
 }

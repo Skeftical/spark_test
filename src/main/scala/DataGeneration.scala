@@ -52,28 +52,28 @@ object DataGeneration {
     val broadcastSub = sc.broadcast(subspaces)
     //So for subspace 0 : means is a matrix of (dXsubspaces) means correspond to Column 0
     //Generate random normal data and then transform them
-    val multiDataset = normalVectorRDD(sc, sizeDataset, dimensions, 1).map(v => {
-      val subspace = new scala.util.Random().nextInt(broadcastSub.value); //uniformly select subspace
-      for (i <- broadcastVar.value.indices)
-        yield { broadcastVar.value(i)(subspace) + broadcastVariance.value * v(i)  } //Transform Multi
-    })
-
-//    val multiDataset = uniformVectorRDD(sc, sizeDataset, dimensions, 1).map(v => {
+//    val multiDataset = normalVectorRDD(sc, sizeDataset, dimensions, 1).map(v => {
 //      val subspace = new scala.util.Random().nextInt(broadcastSub.value); //uniformly select subspace
 //      for (i <- broadcastVar.value.indices)
-//        yield { broadcastVar.value(i)(subspace) + 0.04 * v(i)  } //Transform Multi (a + (b-a) * v = a + (a+1-a) * v = a + 1 * v
+//        yield { broadcastVar.value(i)(subspace) + broadcastVariance.value * v(i)  } //Transform Multi
 //    })
+
+    val multiDataset = uniformVectorRDD(sc, sizeDataset, dimensions, 1).map(v => {
+      val subspace = new scala.util.Random().nextInt(broadcastSub.value); //uniformly select subspace
+      for (i <- broadcastVar.value.indices)
+        yield { broadcastVar.value(i)(subspace) + 0.04 * v(i)  } //Transform Multi (a + (b-a) * v = a + (a+1-a) * v = a + 1 * v
+    })
 
 
     //Add volume for hypercube Uniform
     //Generated distributions are of the form N(0,1) for normal. Transoform to mu + sigma * x to get N(mu, sigma^2)
     val lmeans = Array(0.02, 0.04, 0.06)
 //
-//    val uniVol = uniformRDD(sc, sizeDataset,1).map(d => {
-//          val a = lmeans(randRegion.nextInt(3))
-//          a + (a+0.02 - a) * d
-//        }) //Original is U(0,1) transform to U(a,b) by a + (b - a) * v)}
-    val uniVol = normalRDD(sc, sizeDataset,1).map(d => lmeans(randRegion.nextInt(3)) + 0.03 * d.abs) //mu + sigma * v
+    val uniVol = uniformRDD(sc, sizeDataset,1).map(d => {
+          val a = lmeans(randRegion.nextInt(3))
+          a + (a+0.02 - a) * d
+        }) //Original is U(0,1) transform to U(a,b) by a + (b - a) * v)}
+//    val uniVol = normalRDD(sc, sizeDataset,1).map(d => lmeans(randRegion.nextInt(3)) + 0.03 * d.abs) //mu + sigma * v
 //      val mean = 0.1
 //      val uniVol = exponentialRDD(sc, mean, sizeDataset,1).map(d => 0.1 + 0.09 * d)
 
@@ -81,7 +81,7 @@ object DataGeneration {
 
     //Transform vector to string and save
     multiDataset.zip(uniVol).map(t => t._1.mkString(",") +"," + t._2.toString)
-      .saveAsTextFile("/home/fotis/dev_projects/spark_test/target/calls_queries_gau_gau_varl-0.0009_varx-0.0001")
+      .saveAsTextFile("/home/fotis/dev_projects/spark_test/target/calls_queries_uni_uni_varl-")
 
   }
 

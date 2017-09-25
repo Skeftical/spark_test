@@ -55,7 +55,7 @@ object QueryExecuteCrimeData {
 //                      "/home/fotis/dev_projects/spark_test/target/gau-x__uni-l_varx-0.01_multimodal-l(0.02_0.08_0.1)/part-00000",
 //                      "/home/fotis/dev_projects/spark_test/target/uni-x__gau-l_varx-0.01_multimodal-l(0.02_0.08_0.1)/part-00000",
 //                      "/home/fotis/dev_projects/spark_test/target/uni-x__uni-l_varx-0.01_multimodal-l(0.02_0.08_0.1)/part-00000")
-    val files = Array("/home/fotis/dev_projects/spark_test/target/uni-x__uni-l_varx-0.01_multimodal-CONNECTED-l(0.02_0.04_0.06)/part-00000")
+    val files = Array("/home/fotis/dev_projects/spark_test/target/gau-x__uni-l_varx-0.01_multimodal-l(0.02_0.08_0.1)/part-00000")
     files.par.foreach(qfile => {
       //    val QUERY_FILE = "/home/fotis/dev_projects/spark_test/target/OUT_high_variance_l_norm_-05to05/part-00000"
       val rdd = spark.sparkContext.textFile(qfile)
@@ -67,13 +67,16 @@ object QueryExecuteCrimeData {
         val x1 = q(0)
         val x2 = q(1)
         val count = spark.sql(s"SELECT * FROM points WHERE $theta > sqrt(power($x1 - x, 2) + power($x2 - y, 2))").count()
-        val average = spark.sql(s"SELECT AVG(update_in_days) FROM points WHERE $theta > sqrt(power($x1 - x, 2) + power($x2 - y, 2))").first().getDouble(0)
+        var average = 0.0
+        if (count!=0) {
+          average = spark.sql(s"SELECT AVG(update_in_days) FROM points WHERE $theta > sqrt(power($x1 - x, 2) + power($x2 - y, 2))").first().getDouble(0)
+        }
         q.mkString(",")+","+count+","+average
       })
 
       val rddResults = sc.parallelize(results.toArray[String])
       //    //Save File
-      rddResults.saveAsTextFile("/home/fotis/dev_projects/spark_test/target/crime_results_AVG"+qfile)
+      rddResults.saveAsTextFile("/home/fotis/dev_projects/spark_test/target/crime_results_AVG/"+qfile.split("/")(6))
     })
 
     }
